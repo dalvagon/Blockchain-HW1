@@ -8,6 +8,15 @@ contract Owned {
         _owner = msg.sender;
     }
 
+    error OwnableUnauthorizedAccount(address account);
+
+    modifier onlyOwner() {
+        if (msg.sender != _owner) {
+            revert OwnableUnauthorizedAccount(msg.sender);
+        }
+        _;
+    }
+
     function owner() public view returns (address) {
         return _owner;
     }

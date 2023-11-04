@@ -38,15 +38,7 @@ contract ProductIdentification is Owned {
 
     event ProductAdded(address indexed whom, uint productId, uint when);
 
-    error OwnableUnauthorizedAccount(address account);
     error ProducerUnauthorizedAccount(address account);
-
-    modifier onlyOwner() {
-        if (msg.sender != _owner) {
-            revert OwnableUnauthorizedAccount(msg.sender);
-        }
-        _;
-    }
 
     modifier onlyProducer() {
         if (producers[msg.sender].account != msg.sender) {
