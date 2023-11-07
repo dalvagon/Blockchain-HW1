@@ -2,11 +2,12 @@
 The project was created using hardhat. It can be deployed to networks defined in hardhat.config.js (currently to ganache). <br/>
 The contracts are located in the contracts folder. The contracts/utils folder contains contracts that I used in order to avoid duplication of code. <br/>
 The test folder contains tests for the contracts The tests were developed using Mocha test framework and Chai assertion library. <br/>
-<h3>Test report<h3>
+<h3>Test report</h3>
+
 <h4>Owned</h4>
     ✔ Should set the right owner <br/>
 
-ProductDeposit
+<h4>ProductDeposit</h4>
     ✔ Should set the right owner <br/>
     ✔ Owner should be able to set product deposit fee <br/>
     ✔ Non-owner should not be able to set product deposit fee per unit <br/>
@@ -40,7 +41,7 @@ ProductDeposit
     ✔ Should be able to get producer for product <br/>
 
 <h4>ProductStore</h4>
-    ✔ Should set the right owner (45ms) <br/>
+    ✔ Should set the right owner <br/>
     ✔ Owner producer should be able to set product price per unit <br/>
     ✔ Product price per unit should be greater than zero <br/>
     ✔ Non-owner producer should not be able to set product price per unit <br/>
@@ -48,7 +49,7 @@ ProductDeposit
     ✔ Non-owner producer should not be able to transfer product to store <br/>
     ✔ Should revert when transferring product to store with insufficient stock <br/>
     ✔ Should be able to see if product is available in store <br/>
-    ✔ Should be able to see if product is authentic (60ms) <br/>
+    ✔ Should be able to see if product is authentic <br/>
     ✔ Should be able to buy product <br/>
     ✔ Should revert when buying product with insufficient stock <br/>
     ✔ Should revert when buying product with insufficient payment <br/>
