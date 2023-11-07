@@ -46,7 +46,7 @@ contract ProductIdentification is Owned, Payable {
     function enrollProducer(string memory name) external payable {
         require(
             bytes(name).length > 0,
-            "ProductIdentification: name is required"
+            "ProductIdentification: producer name is required"
         );
         require(
             producers[msg.sender].account == address(0),
@@ -70,6 +70,10 @@ contract ProductIdentification is Owned, Payable {
         string memory description,
         uint volume
     ) external payable onlyProducer {
+        require(
+            bytes(name).length > 0,
+            "ProductIdentification: product name is required"
+        );
         _productCounter++;
         _products[_productCounter] = Product(
             _productCounter,
@@ -99,7 +103,7 @@ contract ProductIdentification is Owned, Payable {
             string memory name,
             string memory description,
             uint volume,
-            address payable owner
+            address payable producer
         )
     {
         require(
@@ -126,10 +130,6 @@ contract ProductIdentification is Owned, Payable {
     }
 
     function productVolume(uint productId) external view returns (uint) {
-        require(
-            _products[productId].id != 0,
-            "ProductIdentification: product is not registered"
-        );
         return _products[productId].volume;
     }
 }

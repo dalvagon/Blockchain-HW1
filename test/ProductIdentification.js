@@ -23,7 +23,6 @@ describe("ProductIdentification", function () {
 
     it("Owner should be able to set producer enrollment fee", async function () {
         const { productIdentification, owner } = await loadFixture(deployOwnedFixture);
-
         await productIdentification.setProducerEnrollmentFee(100);
 
         expect(await productIdentification.producerEnrollmentFee()).to.equal(100);
@@ -37,16 +36,20 @@ describe("ProductIdentification", function () {
 
     it("Should be able to enroll as producer", async function () {
         const { productIdentification, owner, otherAccount } = await loadFixture(deployOwnedFixture);
-
         await productIdentification.setProducerEnrollmentFee(100);
         await productIdentification.connect(otherAccount).enrollProducer("John Doe", { value: 100 });
 
         expect(await productIdentification.isProducer(otherAccount.address)).to.equal(true);
     });
 
-    it("Should not be able to enroll as producer with insufficient enrollment fee", async function () {
+    it("Should require producer name when enrolling as producer", async function () {
         const { productIdentification, owner, otherAccount } = await loadFixture(deployOwnedFixture);
 
+        await expect(productIdentification.connect(otherAccount).enrollProducer("", { value: 100 })).to.be.revertedWith("ProductIdentification: producer name is required");
+    });
+
+    it("Should not be able to enroll as producer with insufficient enrollment fee", async function () {
+        const { productIdentification, owner, otherAccount } = await loadFixture(deployOwnedFixture);
         await productIdentification.setProducerEnrollmentFee(100);
 
         await expect(productIdentification.connect(otherAccount).enrollProducer("John Doe", { value: 99 })).to.be.revertedWith("ProductIdentification: producer enrollment fee is required");
@@ -54,7 +57,6 @@ describe("ProductIdentification", function () {
 
     it("Should not be able to enroll as producer twice", async function () {
         const { productIdentification, owner, otherAccount } = await loadFixture(deployOwnedFixture);
-
         await productIdentification.setProducerEnrollmentFee(100);
         await productIdentification.connect(otherAccount).enrollProducer("John Doe", { value: 100 });
 
@@ -63,20 +65,72 @@ describe("ProductIdentification", function () {
 
     it("Should emit Received event when enrolling as producer", async function () {
         const { productIdentification, owner, otherAccount } = await loadFixture(deployOwnedFixture);
-
         await productIdentification.setProducerEnrollmentFee(100);
 
         await expect(productIdentification.connect(otherAccount).enrollProducer("John Doe", { value: 102 }))
-            .to.emit(productIdentification, "Received");
+            .to.emit(productIdentification, "Received").withArgs(await productIdentification.getAddress(), 100);
     });
 
-    if ("Should be able to register product", async function () {
+    if ("Should be able to register products", async function () {
         const { productIdentification, owner, otherAccount } = await loadFixture(deployOwnedFixture);
-
         await productIdentification.setProducerEnrollmentFee(100);
         await productIdentification.connect(otherAccount).enrollProducer("John Doe", { value: 100 });
         await productIdentification.connect(otherAccount).registerProduct("Milk", "Cow milk", 100);
 
         expect(await productIdentification.isProductRegistered(1)).to.equal(true);
+    });
+
+    it("Should require product name when registering product", async function () {
+        const { productIdentification, owner, otherAccount } = await loadFixture(deployOwnedFixture);
+        await productIdentification.setProducerEnrollmentFee(100);
+        await productIdentification.connect(otherAccount).enrollProducer("John Doe", { value: 100 });
+
+        await expect(productIdentification.connect(otherAccount).registerProduct("", "Cow milk", 100)).to.be.revertedWith("ProductIdentification: product name is required");
+    });
+
+    it("Only producer should be able to register products", async function () {
+        const { productIdentification, owner, otherAccount } = await loadFixture(deployOwnedFixture);
+        await productIdentification.setProducerEnrollmentFee(100);
+
+        await expect(productIdentification.registerProduct("Milk", "Cow milk", 100)).to.be.revertedWithCustomError(productIdentification, "ProducerUnauthorizedAccount");
+    });
+
+    it("Should emit ProductRegistered event when registering product", async function () {
+        const { productIdentification, owner, otherAccount } = await loadFixture(deployOwnedFixture);
+        await productIdentification.setProducerEnrollmentFee(100);
+        await productIdentification.connect(otherAccount).enrollProducer("John Doe", { value: 100 });
+
+        await expect(productIdentification.connect(otherAccount).registerProduct("Milk", "Cow milk", 100))
+            .to.emit(productIdentification, "ProductRegistered");
+    });
+
+    it("Should be able to get product details", async function () {
+        const { productIdentification, owner, otherAccount } = await loadFixture(deployOwnedFixture);
+        await productIdentification.setProducerEnrollmentFee(100);
+        await productIdentification.connect(otherAccount).enrollProducer("John Doe", { value: 100 });
+        await productIdentification.connect(otherAccount).registerProduct("Milk", "Cow milk", 100);
+
+        const productDetails = await productIdentification.getProduct(1);
+
+        expect(productDetails[0]).to.equal(1);
+        expect(productDetails[1]).to.equal("Milk");
+        expect(productDetails[2]).to.equal("Cow milk");
+        expect(productDetails[3]).to.equal(100);
+        expect(productDetails[4]).to.equal(otherAccount.address);
+    });
+
+    it("Should not be able to get product details for unregistered product", async function () {
+        const { productIdentification, owner, otherAccount } = await loadFixture(deployOwnedFixture);
+
+        await expect(productIdentification.getProduct(1)).to.be.revertedWith("ProductIdentification: product is not registered");
+    });
+
+    it("Should be able to get producer for product", async function () {
+        const { productIdentification, owner, otherAccount } = await loadFixture(deployOwnedFixture);
+        await productIdentification.setProducerEnrollmentFee(100);
+        await productIdentification.connect(otherAccount).enrollProducer("John Doe", { value: 100 });
+        await productIdentification.connect(otherAccount).registerProduct("Milk", "Cow milk", 100);
+
+        expect(await productIdentification.producerForProduct(1)).to.equal(otherAccount.address);
     });
 });

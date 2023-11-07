@@ -11,7 +11,7 @@ contract ProductStore is Owned, Payable {
         uint productId;
         uint amount;
     }
-    uint private _productPricePerUnit; // defaults to 0 if not set
+    uint private _productPricePerUnit;
     address private _productIdentificationAddress;
     address private _productDepositAddress;
     mapping(uint => ProductStock) private _productStocks;
@@ -22,6 +22,7 @@ contract ProductStore is Owned, Payable {
     ) {
         _productIdentificationAddress = productIdentificationAddress;
         _productDepositAddress = productDepositAddress;
+        _productPricePerUnit = 1; // defaults to 1 if not set
     }
 
     event ProductStocked(uint productId, uint amount, uint when);
@@ -32,6 +33,10 @@ contract ProductStore is Owned, Payable {
     }
 
     function setProductPricePerUnit(uint price) external onlyOwner {
+        require(
+            price > 0,
+            "ProductStore: product price per unit must be greater than zero"
+        );
         _productPricePerUnit = price;
     }
 
@@ -40,18 +45,14 @@ contract ProductStore is Owned, Payable {
         uint amount
     ) external onlyOwner {
         require(
-            _productIdentificationAddress != address(0),
-            "ProductStore: product identification address must be set"
-        );
-        require(
-            _productDepositAddress != address(0),
-            "ProductStore: product deposit address must be set"
-        );
-        require(
-            ProductDeposit(payable(_productDepositAddress)).amountForProduct(
+            ProductDeposit(payable(_productDepositAddress)).productStock(
                 productId
             ) >= amount,
-            "ProductStore: product deposit amount must be greater than zero"
+            "ProductStore: product is not available in deposit"
+        );
+        require(
+            amount > 0,
+            "ProductStore: transfer amount must be greater than zero"
         );
         bool withdrawn = ProductDeposit(payable(_productDepositAddress))
             .withdrawProduct(productId, amount);
@@ -71,18 +72,18 @@ contract ProductStore is Owned, Payable {
                 .isProductRegistered(productId);
     }
 
+    function productStock(uint productId) external view returns (uint) {
+        return _productStocks[productId].amount;
+    }
+
     function buyProduct(uint productId) external payable {
         require(
-            _productPricePerUnit > 0,
-            "ProductStore: product price per unit must be set"
-        );
-        require(
             _productStocks[productId].amount > 0,
-            "ProductStore: product stock must be greater than zero"
+            "ProductStore: product is not available"
         );
         require(
             msg.value >= _productPricePerUnit,
-            "ProductStore: product price must be paid"
+            "ProductStore: insufficient payment"
         );
         _productStocks[productId].amount -= 1;
         uint feeToProducer = _productPricePerUnit / 2;

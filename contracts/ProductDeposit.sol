@@ -26,6 +26,12 @@ contract ProductDeposit is Owned, Payable {
         uint amount,
         uint when
     );
+    event ProductWithdrawn(
+        address indexed producer,
+        uint productId,
+        uint amount,
+        uint when
+    );
 
     modifier onlyProducer() {
         ProductIdentification productIdentification = ProductIdentification(
@@ -38,20 +44,18 @@ contract ProductDeposit is Owned, Payable {
         _;
     }
 
-    modifier onlyAuthorizedStore() {
-        require(
-            _authorizedStores[msg.sender] != address(0),
-            "ProductDeposit: only authorized store can withdraw product"
-        );
-        _;
-    }
-
-    modifier onlyProducerForProduct(uint productId) {
+    modifier onlyAuthorizedForProduct(uint productId) {
         require(
             msg.sender ==
                 ProductIdentification(payable(_productIdentificationAddress))
-                    .producerForProduct(productId),
-            "ProductDeposit: only authorized producer can deposit product"
+                    .producerForProduct(productId) ||
+                _authorizedStores[
+                    ProductIdentification(
+                        payable(_productIdentificationAddress)
+                    ).producerForProduct(productId)
+                ] ==
+                msg.sender,
+            "ProductDeposit: not authorized producer for product"
         );
         _;
     }
@@ -75,11 +79,8 @@ contract ProductDeposit is Owned, Payable {
     function depositProduct(
         uint productId,
         uint amount
-    ) external payable onlyProducerForProduct(productId) {
-        require(
-            _productExists(productId),
-            "ProductDeposit: product does not exist"
-        );
+    ) external payable onlyAuthorizedForProduct(productId) {
+        // the existence of the product is by the onlyAuthorizedForProduct modifier
         require(
             _productStocks[productId].amount + amount <= _productMaxAmount,
             "ProductDeposit: product stock is full"
@@ -110,35 +111,25 @@ contract ProductDeposit is Owned, Payable {
         _authorizedStores[msg.sender] = storeAddress;
     }
 
+    function authorizedStore() external view returns (address) {
+        return _authorizedStores[msg.sender];
+    }
+
     function withdrawProduct(
         uint productId,
         uint amount
-    )
-        external
-        onlyProducerForProduct(productId)
-        onlyAuthorizedStore
-        returns (bool)
-    {
-        require(
-            _productExists(productId),
-            "ProductDeposit: product does not exist"
-        );
+    ) external onlyAuthorizedForProduct(productId) returns (bool) {
+        // the existence of the product is by the onlyAuthorizedForProduct modifier
         require(
             _productStocks[productId].amount >= amount,
-            "ProductDeposit: product stock is empty"
+            "ProductDeposit: insufficient product stock"
         );
         _productStocks[productId].amount -= amount;
+        emit ProductWithdrawn(msg.sender, productId, amount, block.timestamp);
         return true;
     }
 
-    function amountForProduct(uint productId) external view returns (uint) {
+    function productStock(uint productId) external view returns (uint) {
         return _productStocks[productId].amount;
-    }
-
-    function _productExists(uint productId) private view returns (bool) {
-        ProductIdentification productIdentification = ProductIdentification(
-            payable(_productIdentificationAddress)
-        );
-        return productIdentification.isProductRegistered(productId);
     }
 }
