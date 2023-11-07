@@ -1,10 +1,10 @@
 # Blockchain-HW1
-The project was created using hardhat. It can be deployed to networks defined in hardhat.config.js (currently to ganache).
-The contracts are located in the contracts folder. The contracts/utils folder contains contracts that I used in order to avoid duplication of code.
-The test folder contains tests for the contracts The tests were developed using Mocha test framework and Chai assertion library.
-The test report is at it follows:
-<h2>Owned</h2>
-    ✔ Should set the right owner
+The project was created using hardhat. It can be deployed to networks defined in hardhat.config.js (currently to ganache). <br/>
+The contracts are located in the contracts folder. The contracts/utils folder contains contracts that I used in order to avoid duplication of code. <br/>
+The test folder contains tests for the contracts The tests were developed using Mocha test framework and Chai assertion library. <br/>
+<h3>Test report<h3>
+<h4>Owned</h4>
+    ✔ Should set the right owner <br/>
 
 ProductDeposit
     ✔ Should set the right owner <br/>
@@ -23,7 +23,7 @@ ProductDeposit
     ✔ Only producer should be able to withdraw product from deposit (44ms) <br/>
     ✔ Should not be able to withdraw product from deposit with insufficient stock (44ms) <br/>
 
-<h2>ProductIdentification</h2>
+<h4>ProductIdentification</h4>
     ✔ Should set the right owner <br/>
     ✔ Owner should be able to set producer enrollment fee <br/>
     ✔ Non-owner should not be able to set producer enrollment fee <br/>
@@ -39,7 +39,7 @@ ProductDeposit
     ✔ Should not be able to get product details for unregistered product <br/>
     ✔ Should be able to get producer for product <br/>
 
-<h2>ProductStore</h2>
+<h4>ProductStore</h4>
     ✔ Should set the right owner (45ms) <br/>
     ✔ Owner producer should be able to set product price per unit <br/>
     ✔ Product price per unit should be greater than zero <br/>
