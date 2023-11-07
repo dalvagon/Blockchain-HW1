@@ -7,7 +7,7 @@ import "./ProductIdentification.sol";
 
 contract ProductIdentification is Owned {
     struct Producer {
-        address payable account;
+        address account;
         string name;
     }
     struct Product {
@@ -17,7 +17,6 @@ contract ProductIdentification is Owned {
         uint amount;
         address payable owner;
     }
-    address private _owner;
     uint private _producerEnrollmentFee;
     address payable private _productDepositContractAddress;
     // address payable private _productIdentificationContractAddress;
@@ -36,6 +35,8 @@ contract ProductIdentification is Owned {
         // );
     }
 
+    event Received(address, uint);
+    event ProducerEnrolled(address indexed whom, uint when);
     event ProductAdded(address indexed whom, uint productId, uint when);
 
     error ProducerUnauthorizedAccount(address account);
@@ -47,15 +48,16 @@ contract ProductIdentification is Owned {
         _;
     }
 
-    function getOwner() external view returns (address) {
-        return _owner;
+    receive() external payable {
+        emit Received(msg.sender, msg.value);
     }
 
-    function getProducerEnrollmentFee() external view returns (uint) {
+    function producerEnrollmentFee() external view returns (uint) {
         return _producerEnrollmentFee;
     }
 
     function setProducerEnrollmentFee(uint fee) external onlyOwner {
+        require(fee > 0, "ProductIdentification: fee must be greater than 0");
         _producerEnrollmentFee = fee;
     }
 
@@ -77,29 +79,42 @@ contract ProductIdentification is Owned {
 
     function enrollProducer(string memory name) external payable {
         require(
-            msg.value == _producerEnrollmentFee,
-            "ProductStore: enrollment fee is required"
+            bytes(name).length > 0,
+            "ProductIdentification: name is required"
         );
-        producers[msg.sender] = Producer(payable(msg.sender), name);
+        require(
+            producers[msg.sender].account == address(0),
+            "ProductIdentification: producer already enrolled"
+        );
+        require(
+            msg.value >= _producerEnrollmentFee,
+            "ProductIdentification: producer enrollment fee is required"
+        );
+        (bool sent, bytes memory data) = payable(address(this)).call{
+            value: _producerEnrollmentFee
+        }("");
+        require(sent, "Failed to send Ether");
+
+        if (msg.value > _producerEnrollmentFee) {
+            (bool returned, bytes memory returnedData) = msg.sender.call{
+                value: msg.value - _producerEnrollmentFee
+            }("");
+            require(returned, "Failed to return Ether");
+        }
+        producers[msg.sender] = Producer(msg.sender, name);
+        emit ProducerEnrolled(msg.sender, block.timestamp);
     }
 
     function addProduct(
         string memory name,
         string memory description,
-        uint price
+        uint amount
     ) external payable onlyProducer {
         require(
             msg.value >= _producerEnrollmentFee,
-            "ProductStore: enrollment fee is required"
+            "ProductIdentification: producer enrollment fee is required"
         );
-        _productCounter++;
-        _products[_productCounter] = Product(
-            _productCounter,
-            name,
-            description,
-            price,
-            payable(msg.sender)
-        );
+
         (bool sent, bytes memory data) = address(this).call{
             value: _producerEnrollmentFee
         }("");
@@ -112,6 +127,22 @@ contract ProductIdentification is Owned {
             require(returned, "Failed to return Ether");
         }
 
+        _productCounter++;
+        _products[_productCounter] = Product(
+            _productCounter,
+            name,
+            description,
+            amount,
+            payable(msg.sender)
+        );
         emit ProductAdded(msg.sender, _productCounter, block.timestamp);
+    }
+
+    function isProducer(address addr) external view returns (bool) {
+        return producers[addr].account == addr;
+    }
+
+    function productExists(uint productId) external view returns (bool) {
+        return _products[productId].id != 0;
     }
 }
