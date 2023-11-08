@@ -63,3 +63,15 @@ File                        |  % Stmts | % Branch |  % Funcs |  % Lines |Uncover
   Owned.sol                 |      100 |      100 |      100 |      100 |                |
   Payable.sol               |      100 |       50 |      100 |      100 |                |
 All files                   |      100 |    96.88 |      100 |      100 |                |
+
+
+<h3>Transaction costs</h3>
+Transaction costs report using Remix IDE and Metamask (.
+
+
+Method                            |   Gas Cost   |   Gas cost(ETH)   |   Gas cost($)   |
+----------------------------------|--------------|-------------------|-----------------|
+Set producer enrollment fee       |    45973     |    0.00011493     |  0.2167959069   |
+Enroll Producer                   |    80601     |    0.0002015      |  0.379716675    | 
+Register Product                  |    162776    |    0.00040694     |  0.00040694     | 
+ 
