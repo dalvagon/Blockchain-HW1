@@ -10,7 +10,7 @@ Method                            |   Gas Cost   |   Gas cost(ETH)   |   Gas cos
 ----------------------------------|--------------|-------------------|-----------------|
 Set producer enrollment fee       |    26073     |    0.00006518     |  0.1228629964   |
 Enroll Producer                   |    80601     |    0.0002015      |  0.379716675    | 
-Register Product                  |    162776    |    0.00040694     |  0.7668947076   | 
+Register Product                  |    145868    |    0.00036467     |  0.6862505928   | 
 Set product deposit fee per unit  |    45974     |    0.00011493     |  0.2167131573   | 
 Set product max amount            |    45885     |    0.00011471     |  0.2164015621   | 
 Authorize store                   |    35421     |    0.0000885      |  0.16694817     | 
