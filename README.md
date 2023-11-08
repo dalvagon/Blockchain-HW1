@@ -18,7 +18,7 @@ Deposit product                   |    59822     |    0.00014955     |  0.281566
 Withdraw product                  |    40401     |    0.000101       |  0.19047489     | 
 Set product price per unit        |    26052     |    0.00006513     |  0.12279414809  | 
 Transfer product to store         |    63855     |    0.00015964     |  0.3011544744   | 
-Buy product   
+Buy product                       |    56369     |    0.0001409      |  0.265472141    | 
 
 <h3>Test report</h3>
 
@@ -83,6 +83,5 @@ File                        |  % Stmts | % Branch |  % Funcs |  % Lines |Uncover
 All files                   |      100 |    96.88 |      100 |      100 |                |
 
 
-                    |    56369     |    0.0001409      |  0.265472141    | 
 
  
