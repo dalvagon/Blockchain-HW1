@@ -2,6 +2,23 @@
 The project was created using hardhat. It can be deployed to networks defined in hardhat.config.js (currently to ganache). <br/>
 The contracts are located in the contracts folder. The contracts/utils folder contains contracts that I used in order to avoid duplication of code. <br/>
 The test folder contains tests for the contracts The tests were developed using Mocha test framework and Chai assertion library. <br/>
+
+<h3>Transaction costs</h3>
+Transaction costs report using Remix IDE and Metamask.
+Method                            |   Gas Cost   |   Gas cost(ETH)   |   Gas cost($)   |
+----------------------------------|--------------|-------------------|-----------------|
+Set producer enrollment fee       |    26073     |    0.00006518     |  0.1228629964   |
+Enroll Producer                   |    80601     |    0.0002015      |  0.379716675    | 
+Register Product                  |    162776    |    0.00040694     |  0.7668947076   | 
+Set product deposit fee per unit  |    45974     |    0.00011493     |  0.2167131573   | 
+Set product max amount            |    45885     |    0.00011471     |  0.2164015621   | 
+Authorize store                   |    35421     |    0.0000885      |  0.16694817     | 
+Deposit product                   |    59822     |    0.00014955     |  0.281566758    | 
+Withdraw product                  |    40401     |    0.000101       |  0.19047489     | 
+Set product price per unit        |    26052     |    0.00006513     |  0.12279414809  | 
+Transfer product to store         |    63855     |    0.00015964     |  0.3011544744   | 
+Buy product   
+
 <h3>Test report</h3>
 
 <h4>Owned</h4>
@@ -65,22 +82,6 @@ File                        |  % Stmts | % Branch |  % Funcs |  % Lines |Uncover
 All files                   |      100 |    96.88 |      100 |      100 |                |
 
 
-<h3>Transaction costs</h3>
-Transaction costs report using Remix IDE and Metamask.
-
-
-Method                            |   Gas Cost   |   Gas cost(ETH)   |   Gas cost($)   |
-----------------------------------|--------------|-------------------|-----------------|
-Set producer enrollment fee       |    26073     |    0.00006518     |  0.1228629964   |
-Enroll Producer                   |    80601     |    0.0002015      |  0.379716675    | 
-Register Product                  |    162776    |    0.00040694     |  0.7668947076   | 
-Set product deposit fee per unit  |    45974     |    0.00011493     |  0.2167131573   | 
-Set product max amount            |    45885     |    0.00011471     |  0.2164015621   | 
-Authorize store                   |    35421     |    0.0000885      |  0.16694817     | 
-Deposit product                   |    59822     |    0.00014955     |  0.281566758    | 
-Withdraw product                  |    40401     |    0.000101       |  0.19047489     | 
-Set product price per unit        |    26052     |    0.00006513     |  0.12279414809  | 
-Transfer product to store         |    63855     |    0.00015964     |  0.3011544744   | 
-Buy product                       |    56369     |    0.0001409      |  0.265472141    | 
+                    |    56369     |    0.0001409      |  0.265472141    | 
 
  
