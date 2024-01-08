@@ -96,8 +96,6 @@ contract ProductDeposit is Owned, Payable {
             "ProductDeposit: product deposit fee is required"
         );
 
-        _send(payable(address(this)), productDepositFee);
-
         if (msg.value > productDepositFee) {
             _send(payable(msg.sender), msg.value - productDepositFee);
         }
