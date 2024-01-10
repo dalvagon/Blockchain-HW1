@@ -106,13 +106,27 @@ contract SampleTokenSale {
     }
 
     function buyTokens(uint256 _numberOfTokens) public payable {
-        require(msg.value == _numberOfTokens * _tokenPrice);
+        require(msg.value >= _numberOfTokens * _tokenPrice);
         require(_tokenContract.balanceOf(_owner) >= _numberOfTokens);
         require(
             _tokenContract.transferFrom(_owner, msg.sender, _numberOfTokens)
         );
-        emit Sell(msg.sender, _numberOfTokens);
         _tokensSold += _numberOfTokens;
+        if (msg.value > _numberOfTokens * _tokenPrice) {
+            payable(msg.sender).transfer(
+                msg.value - _numberOfTokens * _tokenPrice
+            );
+        }
+        emit Sell(msg.sender, _numberOfTokens);
+    }
+
+    function tokensSold() public view returns (uint256) {
+        return _tokensSold;
+    }
+
+    function setTokenPrice(uint256 _price) public {
+        require(msg.sender == _owner);
+        _tokenPrice = _price;
     }
 
     function endSale() public {
@@ -124,5 +138,13 @@ contract SampleTokenSale {
             )
         );
         payable(msg.sender).transfer(address(this).balance);
+    }
+
+    function token() public view returns (SampleToken) {
+        return _tokenContract;
+    }
+
+    function owner() public view returns (address) {
+        return _owner;
     }
 }

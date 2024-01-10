@@ -5,6 +5,7 @@ import "./utils/Owned.sol";
 import "./utils/Payable.sol";
 import "./ProductDeposit.sol";
 import "./ProductIdentification.sol";
+import "./SampleToken.sol";
 
 contract ProductIdentification is Owned, Payable {
     struct Producer {
@@ -20,8 +21,15 @@ contract ProductIdentification is Owned, Payable {
     }
     uint private _producerEnrollmentFee; // defaults to 0 if not set
     uint private _productCounter;
+    SampleToken private sampleToken;
+    SampleTokenSale private sampleTokenSale;
     mapping(uint => Product) private _products;
     mapping(address => Producer) private producers;
+
+    constructor(address sampleTokenSaleAddress) {
+        sampleTokenSale = SampleTokenSale(sampleTokenSaleAddress);
+        sampleToken = sampleTokenSale.token();
+    }
 
     event ProducerEnrolled(address indexed whom, uint when);
     event ProductRegistered(address indexed whom, uint productId, uint when);
@@ -43,7 +51,7 @@ contract ProductIdentification is Owned, Payable {
         _producerEnrollmentFee = fee;
     }
 
-    function enrollProducer(string memory name) external payable {
+    function enrollProducer(string memory name) external {
         require(
             bytes(name).length > 0,
             "ProductIdentification: producer name is required"
@@ -53,14 +61,18 @@ contract ProductIdentification is Owned, Payable {
             "ProductIdentification: producer already enrolled"
         );
         require(
-            msg.value >= _producerEnrollmentFee,
+            sampleToken.balanceOf(msg.sender) >= _producerEnrollmentFee,
             "ProductIdentification: producer enrollment fee is required"
         );
-        _send(payable(address(this)), _producerEnrollmentFee);
-
-        if (msg.value > _producerEnrollmentFee) {
-            _send(payable(msg.sender), msg.value - _producerEnrollmentFee);
-        }
+        bool transferred = sampleToken.transferFrom(
+            msg.sender,
+            owner(),
+            _producerEnrollmentFee
+        );
+        require(
+            transferred,
+            "ProductIdentification: producer enrollment fee transfer failed"
+        );
         producers[msg.sender] = Producer(msg.sender, name);
         emit ProducerEnrolled(msg.sender, block.timestamp);
     }
@@ -131,5 +143,13 @@ contract ProductIdentification is Owned, Payable {
 
     function productVolume(uint productId) external view returns (uint) {
         return _products[productId].volume;
+    }
+
+    function token() external view returns (SampleToken) {
+        return sampleToken;
+    }
+
+    function tokenSale() external view returns (SampleTokenSale) {
+        return sampleTokenSale;
     }
 }

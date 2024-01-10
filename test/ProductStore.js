@@ -5,17 +5,29 @@ const {
 const { anyValue } = require("@nomicfoundation/hardhat-chai-matchers/withArgs");
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
-const provider = ethers.provider;
+const innitialSupply = 1000000;
+const tokenPrice = 100;
+const sampleTokens = 100;
+const producerEnrollmentFee = 100;
 
 describe("ProductStore", function () {
   async function deployProductStoreFixture() {
     const [owner, otherAccount, otherAccount1] = await ethers.getSigners();
+    const SampleToken = await ethers.getContractFactory("SampleToken");
+    const SampleTokenSale = await ethers.getContractFactory("SampleTokenSale");
     const ProductIdentification = await ethers.getContractFactory(
       "ProductIdentification"
     );
+    const sampleToken = await SampleToken.deploy(innitialSupply);
+    const sampleTokenSale = await SampleTokenSale.deploy(
+      await sampleToken.getAddress(),
+      tokenPrice
+    );
+    const productIdentification = await ProductIdentification.deploy(
+      await sampleTokenSale.getAddress()
+    );
     const ProductDeposit = await ethers.getContractFactory("ProductDeposit");
     const ProductStore = await ethers.getContractFactory("ProductStore");
-    const productIdentification = await ProductIdentification.deploy();
     const productDeposit = await ProductDeposit.deploy(
       await productIdentification.getAddress()
     );
@@ -27,10 +39,32 @@ describe("ProductStore", function () {
       productIdentification,
       productDeposit,
       productStore,
+      sampleToken,
+      sampleTokenSale,
       owner,
       otherAccount,
       otherAccount1,
     };
+  }
+
+  async function enrollProducer(
+    productIdentification,
+    sampleToken,
+    sampleTokenSale,
+    account
+  ) {
+    await productIdentification.setProducerEnrollmentFee(producerEnrollmentFee);
+    await sampleToken.approve(
+      await sampleTokenSale.getAddress(),
+      producerEnrollmentFee
+    );
+    await sampleTokenSale.connect(account).buyTokens(producerEnrollmentFee, {
+      value: producerEnrollmentFee * tokenPrice,
+    });
+    await sampleToken
+      .connect(account)
+      .approve(await productIdentification.getAddress(), producerEnrollmentFee);
+    await productIdentification.connect(account).enrollProducer("John Doe");
   }
 
   it("Should set the right owner", async function () {
@@ -95,15 +129,20 @@ describe("ProductStore", function () {
       productIdentification,
       productDeposit,
       productStore,
+      sampleToken,
+      sampleTokenSale,
       owner,
       otherAccount,
     } = await loadFixture(deployProductStoreFixture);
     await productDeposit.setProductDepositFeePerUnit(1);
     await productDeposit.setProductMaxAmount(100);
-    await productIdentification.setProducerEnrollmentFee(100);
-    await productIdentification
-      .connect(otherAccount)
-      .enrollProducer("John Doe", { value: 100 });
+    await enrollProducer(
+      productIdentification,
+      sampleToken,
+      sampleTokenSale,
+      otherAccount
+    );
+
     await productIdentification
       .connect(otherAccount)
       .registerProduct("Milk", "Cow Milk", 2);
@@ -152,15 +191,20 @@ describe("ProductStore", function () {
       productIdentification,
       productDeposit,
       productStore,
+      sampleToken,
+      sampleTokenSale,
       owner,
       otherAccount,
     } = await loadFixture(deployProductStoreFixture);
     await productDeposit.setProductDepositFeePerUnit(1);
     await productDeposit.setProductMaxAmount(100);
-    await productIdentification.setProducerEnrollmentFee(100);
-    await productIdentification
-      .connect(otherAccount)
-      .enrollProducer("John Doe", { value: 100 });
+    await enrollProducer(
+      productIdentification,
+      sampleToken,
+      sampleTokenSale,
+      otherAccount
+    );
+
     await productIdentification
       .connect(otherAccount)
       .registerProduct("Milk", "Cow Milk", 2);
@@ -180,15 +224,20 @@ describe("ProductStore", function () {
       productIdentification,
       productDeposit,
       productStore,
+      sampleToken,
+      sampleTokenSale,
       owner,
       otherAccount,
     } = await loadFixture(deployProductStoreFixture);
     await productDeposit.setProductDepositFeePerUnit(1);
     await productDeposit.setProductMaxAmount(100);
-    await productIdentification.setProducerEnrollmentFee(100);
-    await productIdentification
-      .connect(otherAccount)
-      .enrollProducer("John Doe", { value: 100 });
+    await enrollProducer(
+      productIdentification,
+      sampleToken,
+      sampleTokenSale,
+      otherAccount
+    );
+
     await productIdentification
       .connect(otherAccount)
       .registerProduct("Milk", "Cow Milk", 2);
@@ -208,6 +257,8 @@ describe("ProductStore", function () {
       productIdentification,
       productDeposit,
       productStore,
+      sampleToken,
+      sampleTokenSale,
       owner,
       otherAccount,
       otherAccount1,
@@ -215,10 +266,13 @@ describe("ProductStore", function () {
 
     await productDeposit.setProductDepositFeePerUnit(1);
     await productDeposit.setProductMaxAmount(100);
-    await productIdentification.setProducerEnrollmentFee(100);
-    await productIdentification
-      .connect(otherAccount)
-      .enrollProducer("John Doe", { value: 100 });
+    await enrollProducer(
+      productIdentification,
+      sampleToken,
+      sampleTokenSale,
+      otherAccount
+    );
+
     await productIdentification
       .connect(otherAccount)
       .registerProduct("Milk", "Cow Milk", 2);
@@ -240,16 +294,20 @@ describe("ProductStore", function () {
       productIdentification,
       productDeposit,
       productStore,
+      sampleToken,
+      sampleTokenSale,
       owner,
       otherAccount,
       otherAccount1,
     } = await loadFixture(deployProductStoreFixture);
     await productDeposit.setProductDepositFeePerUnit(1);
     await productDeposit.setProductMaxAmount(100);
-    await productIdentification.setProducerEnrollmentFee(100);
-    await productIdentification
-      .connect(otherAccount)
-      .enrollProducer("John Doe", { value: 100 });
+    await enrollProducer(
+      productIdentification,
+      sampleToken,
+      sampleTokenSale,
+      otherAccount
+    );
     await productIdentification
       .connect(otherAccount)
       .registerProduct("Milk", "Cow Milk", 2);
@@ -273,6 +331,8 @@ describe("ProductStore", function () {
       productIdentification,
       productDeposit,
       productStore,
+      sampleToken,
+      sampleTokenSale,
       owner,
       otherAccount,
       otherAccount1,
@@ -280,10 +340,12 @@ describe("ProductStore", function () {
 
     await productDeposit.setProductDepositFeePerUnit(1);
     await productDeposit.setProductMaxAmount(100);
-    await productIdentification.setProducerEnrollmentFee(100);
-    await productIdentification
-      .connect(otherAccount)
-      .enrollProducer("John Doe", { value: 100 });
+    await enrollProducer(
+      productIdentification,
+      sampleToken,
+      sampleTokenSale,
+      otherAccount
+    );
     await productIdentification
       .connect(otherAccount)
       .registerProduct("Milk", "Cow Milk", 2);

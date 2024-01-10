@@ -1,20 +1,56 @@
 const {
-  time,
   loadFixture,
 } = require("@nomicfoundation/hardhat-toolbox/network-helpers");
-const { anyValue } = require("@nomicfoundation/hardhat-chai-matchers/withArgs");
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
-const provider = ethers.provider;
+const innitialSupply = 1000000;
+const tokenPrice = 100;
+const sampleTokens = 100;
+const producerEnrollmentFee = 100;
 
 describe("ProductIdentification", function () {
   async function deployProductIdentificationFixture() {
     const [owner, otherAccount] = await ethers.getSigners();
+    const SampleToken = await ethers.getContractFactory("SampleToken");
+    const SampleTokenSale = await ethers.getContractFactory("SampleTokenSale");
     const ProductIdentification = await ethers.getContractFactory(
       "ProductIdentification"
     );
-    const productIdentification = await ProductIdentification.deploy();
-    return { productIdentification, owner, otherAccount };
+    const sampleToken = await SampleToken.deploy(innitialSupply);
+    const sampleTokenSale = await SampleTokenSale.deploy(
+      await sampleToken.getAddress(),
+      tokenPrice
+    );
+    const productIdentification = await ProductIdentification.deploy(
+      await sampleTokenSale.getAddress()
+    );
+    return {
+      productIdentification,
+      sampleToken,
+      sampleTokenSale,
+      owner,
+      otherAccount,
+    };
+  }
+
+  async function enrollProducer(
+    productIdentification,
+    sampleToken,
+    sampleTokenSale,
+    account
+  ) {
+    await productIdentification.setProducerEnrollmentFee(producerEnrollmentFee);
+    await sampleToken.approve(
+      await sampleTokenSale.getAddress(),
+      producerEnrollmentFee
+    );
+    await sampleTokenSale.connect(account).buyTokens(producerEnrollmentFee, {
+      value: producerEnrollmentFee * tokenPrice,
+    });
+    await sampleToken
+      .connect(account)
+      .approve(await productIdentification.getAddress(), producerEnrollmentFee);
+    await productIdentification.connect(account).enrollProducer("John Doe");
   }
 
   it("Should set the right owner", async function () {
@@ -48,13 +84,19 @@ describe("ProductIdentification", function () {
   });
 
   it("Should be able to enroll as producer", async function () {
-    const { productIdentification, owner, otherAccount } = await loadFixture(
-      deployProductIdentificationFixture
+    const {
+      productIdentification,
+      sampleToken,
+      sampleTokenSale,
+      owner,
+      otherAccount,
+    } = await loadFixture(deployProductIdentificationFixture);
+    await enrollProducer(
+      productIdentification,
+      sampleToken,
+      sampleTokenSale,
+      otherAccount
     );
-    await productIdentification.setProducerEnrollmentFee(100);
-    await productIdentification
-      .connect(otherAccount)
-      .enrollProducer("John Doe", { value: 100 });
 
     expect(
       await productIdentification.isProducer(otherAccount.address)
@@ -67,68 +109,71 @@ describe("ProductIdentification", function () {
     );
 
     await expect(
-      productIdentification
-        .connect(otherAccount)
-        .enrollProducer("", { value: 100 })
+      productIdentification.connect(otherAccount).enrollProducer("")
     ).to.be.revertedWith("ProductIdentification: producer name is required");
   });
 
   it("Should not be able to enroll as producer with insufficient enrollment fee", async function () {
-    const { productIdentification, owner, otherAccount } = await loadFixture(
-      deployProductIdentificationFixture
+    const {
+      productIdentification,
+      sampleToken,
+      sampleTokenSale,
+      owner,
+      otherAccount,
+    } = await loadFixture(deployProductIdentificationFixture);
+    await productIdentification.setProducerEnrollmentFee(producerEnrollmentFee);
+    await sampleToken.approve(
+      await sampleTokenSale.getAddress(),
+      producerEnrollmentFee
     );
-    await productIdentification.setProducerEnrollmentFee(100);
-
+    await sampleTokenSale
+      .connect(otherAccount)
+      .buyTokens(producerEnrollmentFee - 1, {
+        value: (producerEnrollmentFee - 1) * tokenPrice,
+      });
     await expect(
-      productIdentification
-        .connect(otherAccount)
-        .enrollProducer("John Doe", { value: 99 })
+      productIdentification.connect(otherAccount).enrollProducer("John Doe")
     ).to.be.revertedWith(
       "ProductIdentification: producer enrollment fee is required"
     );
   });
 
   it("Should not be able to enroll as producer twice", async function () {
-    const { productIdentification, owner, otherAccount } = await loadFixture(
-      deployProductIdentificationFixture
+    const {
+      productIdentification,
+      sampleToken,
+      sampleTokenSale,
+      owner,
+      otherAccount,
+    } = await loadFixture(deployProductIdentificationFixture);
+    await enrollProducer(
+      productIdentification,
+      sampleToken,
+      sampleTokenSale,
+      otherAccount
     );
-    await productIdentification.setProducerEnrollmentFee(100);
-    await productIdentification
-      .connect(otherAccount)
-      .enrollProducer("John Doe", { value: 100 });
 
     await expect(
-      productIdentification
-        .connect(otherAccount)
-        .enrollProducer("John Doe", { value: 100 })
+      productIdentification.connect(otherAccount).enrollProducer("John Doe")
     ).to.be.rejected;
-  });
-
-  it("Should emit Received event when enrolling as producer", async function () {
-    const { productIdentification, owner, otherAccount } = await loadFixture(
-      deployProductIdentificationFixture
-    );
-    await productIdentification.setProducerEnrollmentFee(100);
-
-    await expect(
-      productIdentification
-        .connect(otherAccount)
-        .enrollProducer("John Doe", { value: 102 })
-    )
-      .to.emit(productIdentification, "Received")
-      .withArgs(await productIdentification.getAddress(), 100);
   });
 
   if (
     ("Should be able to register products",
     async function () {
-      const { productIdentification, owner, otherAccount } = await loadFixture(
-        deployProductIdentificationFixture
+      const {
+        productIdentification,
+        sampleToken,
+        sampleTokenSale,
+        owner,
+        otherAccount,
+      } = await loadFixture(deployProductIdentificationFixture);
+      await enrollProducer(
+        productIdentification,
+        sampleToken,
+        sampleTokenSale,
+        otherAccount
       );
-      await productIdentification.setProducerEnrollmentFee(100);
-      await productIdentification
-        .connect(otherAccount)
-        .enrollProducer("John Doe", { value: 100 });
       await productIdentification
         .connect(otherAccount)
         .registerProduct("Milk", "Cow milk", 100);
@@ -138,13 +183,19 @@ describe("ProductIdentification", function () {
   );
 
   it("Should require product name when registering product", async function () {
-    const { productIdentification, owner, otherAccount } = await loadFixture(
-      deployProductIdentificationFixture
+    const {
+      productIdentification,
+      sampleToken,
+      sampleTokenSale,
+      owner,
+      otherAccount,
+    } = await loadFixture(deployProductIdentificationFixture);
+    await enrollProducer(
+      productIdentification,
+      sampleToken,
+      sampleTokenSale,
+      otherAccount
     );
-    await productIdentification.setProducerEnrollmentFee(100);
-    await productIdentification
-      .connect(otherAccount)
-      .enrollProducer("John Doe", { value: 100 });
 
     await expect(
       productIdentification
@@ -168,13 +219,19 @@ describe("ProductIdentification", function () {
   });
 
   it("Should emit ProductRegistered event when registering product", async function () {
-    const { productIdentification, owner, otherAccount } = await loadFixture(
-      deployProductIdentificationFixture
+    const {
+      productIdentification,
+      sampleToken,
+      sampleTokenSale,
+      owner,
+      otherAccount,
+    } = await loadFixture(deployProductIdentificationFixture);
+    await enrollProducer(
+      productIdentification,
+      sampleToken,
+      sampleTokenSale,
+      otherAccount
     );
-    await productIdentification.setProducerEnrollmentFee(100);
-    await productIdentification
-      .connect(otherAccount)
-      .enrollProducer("John Doe", { value: 100 });
 
     await expect(
       productIdentification
@@ -184,13 +241,19 @@ describe("ProductIdentification", function () {
   });
 
   it("Should be able to get product details", async function () {
-    const { productIdentification, owner, otherAccount } = await loadFixture(
-      deployProductIdentificationFixture
+    const {
+      productIdentification,
+      sampleToken,
+      sampleTokenSale,
+      owner,
+      otherAccount,
+    } = await loadFixture(deployProductIdentificationFixture);
+    await enrollProducer(
+      productIdentification,
+      sampleToken,
+      sampleTokenSale,
+      otherAccount
     );
-    await productIdentification.setProducerEnrollmentFee(100);
-    await productIdentification
-      .connect(otherAccount)
-      .enrollProducer("John Doe", { value: 100 });
     await productIdentification
       .connect(otherAccount)
       .registerProduct("Milk", "Cow milk", 100);
@@ -215,13 +278,19 @@ describe("ProductIdentification", function () {
   });
 
   it("Should be able to get producer for product", async function () {
-    const { productIdentification, owner, otherAccount } = await loadFixture(
-      deployProductIdentificationFixture
+    const {
+      productIdentification,
+      sampleToken,
+      sampleTokenSale,
+      owner,
+      otherAccount,
+    } = await loadFixture(deployProductIdentificationFixture);
+    await enrollProducer(
+      productIdentification,
+      sampleToken,
+      sampleTokenSale,
+      otherAccount
     );
-    await productIdentification.setProducerEnrollmentFee(100);
-    await productIdentification
-      .connect(otherAccount)
-      .enrollProducer("John Doe", { value: 100 });
     await productIdentification
       .connect(otherAccount)
       .registerProduct("Milk", "Cow milk", 100);
